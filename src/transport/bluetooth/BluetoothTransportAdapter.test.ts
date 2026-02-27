@@ -6,29 +6,30 @@
  * to avoid requiring DOM Bluetooth type stubs.
  */
 
-import { BluetoothTransportAdapter } from './BluetoothTransportAdapter';
-import { EventEnvelope } from '../../types/EventEnvelope';
+import { describe, it, expect, afterEach, vi, type Mock } from 'vitest';
+import { BluetoothTransportAdapter } from './BluetoothTransportAdapter.js';
+import { EventEnvelope } from '../../shared/types.js';
 
 // ─── Minimal local types for mocking ─────────────────────────────────────────
 
 interface MockChar {
-  writeValueWithResponse: jest.Mock;
-  startNotifications: jest.Mock;
-  addEventListener: jest.Mock;
+  writeValueWithResponse: Mock;
+  startNotifications: Mock;
+  addEventListener: Mock;
   /** Trigger all registered characteristicvaluechanged handlers */
   notify(data: DataView): void;
 }
 
 interface MockGattServer {
-  connect: jest.Mock;
-  disconnect: jest.Mock;
-  getPrimaryService: jest.Mock;
+  connect: Mock;
+  disconnect: Mock;
+  getPrimaryService: Mock;
 }
 
 interface MockDevice {
   id: string;
   gatt: MockGattServer;
-  addEventListener: jest.Mock;
+  addEventListener: Mock;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -69,9 +70,9 @@ function makeMockBluetooth(opts: { available?: boolean; ios?: boolean } = {}): {
   server: MockGattServer;
 } {
   const char: MockChar = {
-    writeValueWithResponse: jest.fn().mockResolvedValue(undefined),
-    startNotifications:     jest.fn().mockResolvedValue(undefined),
-    addEventListener:       jest.fn(),
+    writeValueWithResponse: vi.fn().mockResolvedValue(undefined),
+    startNotifications:     vi.fn().mockResolvedValue(undefined),
+    addEventListener:       vi.fn(),
     notify(data: DataView) {
       for (const [, cb] of char.addEventListener.mock.calls) {
         cb({ target: { value: data } });
@@ -79,12 +80,12 @@ function makeMockBluetooth(opts: { available?: boolean; ios?: boolean } = {}): {
     },
   };
 
-  const service = { getCharacteristic: jest.fn().mockResolvedValue(char) };
+  const service = { getCharacteristic: vi.fn().mockResolvedValue(char) };
 
   const server: MockGattServer = {
-    connect:           jest.fn(),
-    disconnect:        jest.fn(),
-    getPrimaryService: jest.fn().mockResolvedValue(service),
+    connect:           vi.fn(),
+    disconnect:        vi.fn(),
+    getPrimaryService: vi.fn().mockResolvedValue(service),
   };
   // connect() returns itself
   server.connect.mockResolvedValue(server);
@@ -92,12 +93,12 @@ function makeMockBluetooth(opts: { available?: boolean; ios?: boolean } = {}): {
   const device: MockDevice = {
     id:               'mock-device-1',
     gatt:             server,
-    addEventListener: jest.fn(),
+    addEventListener: vi.fn(),
   };
 
   const bluetooth = {
-    getAvailability: jest.fn().mockResolvedValue(opts.available ?? true),
-    requestDevice:   jest.fn().mockResolvedValue(device),
+    getAvailability: vi.fn().mockResolvedValue(opts.available ?? true),
+    requestDevice:   vi.fn().mockResolvedValue(device),
   };
 
   Object.defineProperty(navigator, 'bluetooth', {
@@ -129,7 +130,7 @@ function setAvailable(adapter: BluetoothTransportAdapter, value: boolean): void 
 describe('BluetoothTransportAdapter', () => {
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   // ── isAvailable ─────────────────────────────────────────────────────────────
@@ -197,7 +198,7 @@ describe('BluetoothTransportAdapter', () => {
       const envelope = makeEnvelope({ kind: 2 });
       await adapter.publish(envelope);
 
-      const written = char.writeValueWithResponse.mock.calls[0][0] as Uint8Array;
+      const written = char.writeValueWithResponse.mock.calls[0]![0] as Uint8Array;
       const payload = new TextDecoder().decode(written.slice(4));
       const decoded = JSON.parse(payload) as EventEnvelope;
 
@@ -210,16 +211,16 @@ describe('BluetoothTransportAdapter', () => {
       const mocks1 = makeMockBluetooth({ available: true });
       // Build a second peer char
       const char2: MockChar = {
-        writeValueWithResponse: jest.fn().mockResolvedValue(undefined),
-        startNotifications:     jest.fn().mockResolvedValue(undefined),
-        addEventListener:       jest.fn(),
+        writeValueWithResponse: vi.fn().mockResolvedValue(undefined),
+        startNotifications:     vi.fn().mockResolvedValue(undefined),
+        addEventListener:       vi.fn(),
         notify()                { /* unused */ },
       };
-      const svc2 = { getCharacteristic: jest.fn().mockResolvedValue(char2) };
+      const svc2 = { getCharacteristic: vi.fn().mockResolvedValue(char2) };
       const server2 = {
-        connect:           jest.fn().mockResolvedValue(undefined),
-        disconnect:        jest.fn(),
-        getPrimaryService: jest.fn().mockResolvedValue(svc2),
+        connect:           vi.fn().mockResolvedValue(undefined),
+        disconnect:        vi.fn(),
+        getPrimaryService: vi.fn().mockResolvedValue(svc2),
       };
 
       const adapter = new BluetoothTransportAdapter();
@@ -259,8 +260,8 @@ describe('BluetoothTransportAdapter', () => {
       char.notify(makeChunkView(envelope, 42));
 
       expect(received).toHaveLength(1);
-      expect(received[0].id).toBe(envelope.id);
-      expect(received[0].kind).toBe(1);
+      expect(received[0]!.id).toBe(envelope.id);
+      expect(received[0]!.kind).toBe(1);
     });
 
     it('discards a packet with a malformed JSON body', () => {
@@ -306,7 +307,7 @@ describe('BluetoothTransportAdapter', () => {
       const adapter = new BluetoothTransportAdapter();
       setAvailable(adapter, true);
 
-      const publishSpy = jest.spyOn(adapter, 'publish').mockResolvedValue(undefined);
+      const publishSpy = vi.spyOn(adapter, 'publish').mockResolvedValue(undefined);
 
       const envelope = makeEnvelope({ id: 'feed' + '0'.repeat(60) });
       (adapter as unknown as { _relay(e: EventEnvelope): void })._relay(envelope);
@@ -319,7 +320,7 @@ describe('BluetoothTransportAdapter', () => {
       const adapter = new BluetoothTransportAdapter();
       setAvailable(adapter, true);
 
-      const publishSpy = jest.spyOn(adapter, 'publish').mockResolvedValue(undefined);
+      const publishSpy = vi.spyOn(adapter, 'publish').mockResolvedValue(undefined);
 
       const envelope = makeEnvelope();
       const relay = (e: EventEnvelope) =>
@@ -336,7 +337,7 @@ describe('BluetoothTransportAdapter', () => {
       const adapter = new BluetoothTransportAdapter();
       setAvailable(adapter, true);
 
-      const publishSpy = jest.spyOn(adapter, 'publish').mockResolvedValue(undefined);
+      const publishSpy = vi.spyOn(adapter, 'publish').mockResolvedValue(undefined);
 
       const relay = (e: EventEnvelope) =>
         (adapter as unknown as { _relay(e: EventEnvelope): void })._relay(e);
@@ -382,7 +383,7 @@ describe('BluetoothTransportAdapter', () => {
 
       handle(rawChunk(encoded.slice(half), 1, 2));
       expect(received).toHaveLength(1);
-      expect(received[0].kind).toBe(3);
+      expect(received[0]!.kind).toBe(3);
     });
 
     it('handles a single-chunk message', () => {
@@ -399,7 +400,7 @@ describe('BluetoothTransportAdapter', () => {
       })._handleIncoming('peer', makeChunkView(envelope, 1));
 
       expect(received).toHaveLength(1);
-      expect(received[0].id).toBe(envelope.id);
+      expect(received[0]!.id).toBe(envelope.id);
     });
 
     it('keeps buffers for different message ids separate', () => {
@@ -432,7 +433,7 @@ describe('BluetoothTransportAdapter', () => {
       makeMockBluetooth({ available: true });
       const adapter = new BluetoothTransportAdapter();
 
-      const mockServer = { disconnect: jest.fn(), connect: jest.fn(), getPrimaryService: jest.fn() };
+      const mockServer = { disconnect: vi.fn(), connect: vi.fn(), getPrimaryService: vi.fn() };
       injectPeer(adapter, 'dev-1', mockServer);
       injectPeer(adapter, 'dev-2', mockServer);
 

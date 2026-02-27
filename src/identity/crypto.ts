@@ -9,9 +9,9 @@
  * live in other modules.
  */
 
-import { schnorr } from '@noble/curves/secp256k1';
-import { sha256 } from '@noble/hashes/sha256';
-import { bytesToHex, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
+import { schnorr } from '@noble/curves/secp256k1.js';
+import { sha256 } from '@noble/hashes/sha2.js';
+import { bytesToHex, hexToBytes, utf8ToBytes } from '@noble/hashes/utils.js';
 import type { EventEnvelope } from './types.js';
 
 // ---------------------------------------------------------------------------
@@ -28,7 +28,7 @@ export interface Keypair {
  * Uses the platform's CSPRNG (crypto.getRandomValues in browser, crypto.randomBytes in Node).
  */
 export function generateKeypair(): Keypair {
-  const privateKey = schnorr.utils.randomPrivateKey();
+  const privateKey = schnorr.utils.randomSecretKey();
   const publicKey = bytesToHex(schnorr.getPublicKey(privateKey));
   return { privateKey, publicKey };
 }

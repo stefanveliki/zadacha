@@ -5,7 +5,7 @@
  * and do not require WebAuthn or IndexedDB.
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { IdentityLayerImpl } from '../identity.js';
 import { MemoryKeyStore } from '../storage.js';
 import { NoOpBiometricGate, CancellingBiometricGate } from '../biometric.js';

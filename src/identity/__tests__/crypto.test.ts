@@ -2,7 +2,7 @@
  * Tests for crypto.ts — key generation, event id derivation, signing, verification.
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import {
   generateKeypair,
   derivePublicKey,
@@ -65,8 +65,8 @@ describe('computeEventId', () => {
 
   it('matches the canonical serialisation [0, pubkey, created_at, kind, content]', () => {
     // Manually compute expected SHA-256 to validate the serialisation
-    import('@noble/hashes/sha256').then(({ sha256 }) => {
-      import('@noble/hashes/utils').then(({ utf8ToBytes, bytesToHex: bth }) => {
+    import('@noble/hashes/sha2.js').then(({ sha256 }) => {
+      import('@noble/hashes/utils.js').then(({ utf8ToBytes, bytesToHex: bth }) => {
         const pubkey     = 'deadbeef';
         const created_at = 1_000_000;
         const kind       = 1;

@@ -206,7 +206,7 @@ export class HubDiscovery {
 
     // 172.16.x.x – 172.31.x.x
     if (hostname.startsWith('172.')) {
-      const second = parseInt(hostname.split('.')[1], 10);
+      const second = parseInt(hostname.split('.')[1] ?? '', 10);
       if (second >= 16 && second <= 31) return true;
     }
 
