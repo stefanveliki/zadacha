@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#111111">
+<title>Rural Run — Runner</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+
+<style>
+/* ===================================================================
+   RESET & FOUNDATION
+   =================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg:           #111111;
+  --bg-card:      #1a1a1a;
+  --bg-input:     #222222;
+  --bg-elevated:  #252525;
+  --text:         #f0f0f0;
+  --text-muted:   #888888;
+  --text-dim:     #666666;
+  --accent:       #4ecdc4;
+  --accent-glow:  rgba(78, 205, 196, 0.25);
+  --danger:       #e74c3c;
+  --warning:      #f39c12;
+  --success:      #2ecc71;
+  --border:       #333333;
+  --radius:       12px;
+  --radius-lg:    20px;
+  --safe-top:     env(safe-area-inset-top, 0px);
+  --safe-bottom:  env(safe-area-inset-bottom, 0px);
+  --sheet-handle: #555555;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* ===================================================================
+   SHARED COMPONENTS
+   =================================================================== */
+button {
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 16px 24px;
+  background: var(--accent);
+  color: #111;
+  font-size: 17px;
+  font-weight: 700;
+  border-radius: var(--radius);
+  transition: opacity 0.15s, transform 0.1s;
+  min-height: 54px;
+}
+.btn-primary:active {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+.btn-primary:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.btn-danger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 24px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: var(--radius);
+  transition: opacity 0.15s, transform 0.1s;
+  min-height: 50px;
+}
+.btn-danger:active {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 24px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  transition: opacity 0.15s, transform 0.1s;
+  min-height: 50px;
+}
+.btn-secondary:active {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+.input-field {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 17px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+}
+.input-field:focus {
+  border-color: var(--accent);
+}
+.input-field::placeholder {
+  color: var(--text-dim);
+}
+
+.input-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+}
+
+/* ===================================================================
+   SCREEN MANAGEMENT
+   =================================================================== */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 1;
+}
+.screen.active {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 10;
+}
+
+/* ===================================================================
+   SCREEN 1: TRIP SETUP
+   =================================================================== */
+#setup-screen {
+  background: var(--bg);
+  padding: 0 20px;
+  padding-top: calc(var(--safe-top) + 20px);
+  padding-bottom: calc(var(--safe-bottom) + 20px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.setup-header {
+  margin-bottom: 32px;
+}
+.setup-header h1 {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.setup-header p {
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.setup-group {
+  margin-bottom: 24px;
+}
+
+.capacity-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.capacity-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 8px;
+  background: var(--bg-input);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.15s;
+}
+.capacity-option.selected {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+.capacity-option .cap-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+.capacity-option:active {
+  transform: scale(0.97);
+}
+
+.time-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.time-chip {
+  flex: 1;
+  min-width: 70px;
+  padding: 14px 8px;
+  background: var(--bg-input);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.15s;
+}
+.time-chip.selected {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+.time-chip:active {
+  transform: scale(0.97);
+}
+
+.setup-go {
+  margin-top: 12px;
+}
+
+/* ===================================================================
+   SCREEN 2: MAP + RUNNING
+   =================================================================== */
+#map-screen {
+  background: var(--bg);
+}
+
+/* Status bar at top */
+.status-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  padding-top: calc(var(--safe-top) + 8px);
+  background: linear-gradient(to bottom, rgba(17,17,17,0.95) 60%, rgba(17,17,17,0));
+  pointer-events: none;
+}
+.status-bar > * {
+  pointer-events: auto;
+}
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse-dot 2s ease infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.status-stops {
+  color: var(--accent);
+}
+.status-stops span {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.status-close-btn {
+  padding: 6px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* Map container */
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Override Leaflet tile styling for dark mode */
+.leaflet-tile-pane {
+  filter: brightness(0.7) contrast(1.1) saturate(0.7);
+}
+.leaflet-control-zoom a {
+  background: var(--bg-card) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+.leaflet-control-attribution {
+  background: rgba(17,17,17,0.7) !important;
+  color: var(--text-dim) !important;
+  font-size: 10px !important;
+}
+.leaflet-control-attribution a {
+  color: var(--text-muted) !important;
+}
+
+/* ===================================================================
+   BOTTOM SHEET
+   =================================================================== */
+.bottom-sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1001;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding-bottom: calc(var(--safe-bottom) + 12px);
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+.bottom-sheet.open {
+  transform: translateY(0);
+}
+
+.sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--sheet-handle);
+  border-radius: 2px;
+  margin: 10px auto 6px;
+  flex-shrink: 0;
+}
+
+.sheet-content {
+  padding: 0 20px 12px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ===================================================================
+   NEED DETAIL (PIN TAP)
+   =================================================================== */
+.need-detail {
+  display: none;
+}
+.need-detail.visible {
+  display: block;
+}
+
+.need-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.need-detail-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+}
+.need-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.need-badge.unmatched {
+  background: rgba(243, 156, 18, 0.2);
+  color: var(--warning);
+}
+
+.need-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.need-info-row:last-of-type {
+  border-bottom: none;
+}
+.need-info-icon {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+.need-info-content {
+  flex: 1;
+}
+.need-info-content .label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+.need-info-content .value {
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.need-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+}
+.need-actions .btn-primary {
+  flex: 1;
+}
+.need-actions .btn-secondary {
+  flex: 0 0 auto;
+  width: auto;
+  padding: 14px 20px;
+}
+
+/* ===================================================================
+   ACCEPTED CARDS LIST
+   =================================================================== */
+.cards-section {
+  display: none;
+}
+.cards-section.visible {
+  display: block;
+}
+
+.cards-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.cards-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+}
+.cards-count {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.stop-card {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  padding: 14px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  border-left: 3px solid var(--accent);
+  transition: opacity 0.2s;
+}
+.stop-card.fulfilled {
+  opacity: 0.5;
+  border-left-color: var(--success);
+}
+
+.stop-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--accent);
+  color: #111;
+  font-size: 14px;
+  font-weight: 800;
+  border-radius: 50%;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+.stop-card.fulfilled .stop-number {
+  background: var(--success);
+}
+
+.stop-info {
+  flex: 1;
+  min-width: 0;
+}
+.stop-info .stop-name {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stop-info .stop-what {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.stop-info .stop-where {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.stop-done-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  background: rgba(78, 205, 196, 0.15);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 8px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.15s;
+}
+.stop-done-btn:active {
+  background: var(--accent);
+  color: #111;
+}
+.stop-card.fulfilled .stop-done-btn {
+  background: rgba(46, 204, 113, 0.15);
+  color: var(--success);
+  pointer-events: none;
+}
+
+.trip-done-section {
+  margin-top: 16px;
+  display: none;
+}
+.trip-done-section.visible {
+  display: block;
+}
+
+/* ===================================================================
+   SCREEN 3: TRIP COMPLETE
+   =================================================================== */
+#complete-screen {
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.complete-icon {
+  font-size: 64px;
+  margin-bottom: 24px;
+}
+.complete-title {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.complete-subtitle {
+  font-size: 16px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.complete-stats {
+  display: flex;
+  gap: 24px;
+  margin: 24px 0 40px;
+}
+.stat {
+  text-align: center;
+}
+.stat-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--accent);
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+.complete-actions {
+  width: 100%;
+  max-width: 320px;
+}
+
+/* ===================================================================
+   CUSTOM MAP MARKERS
+   =================================================================== */
+.need-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50% 50% 50% 4px;
+  transform: rotate(-45deg);
+  border: 2px solid rgba(255,255,255,0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  transition: transform 0.15s;
+}
+.need-marker-inner {
+  transform: rotate(45deg);
+  font-size: 16px;
+  line-height: 1;
+}
+.need-marker.pickup    { background: var(--warning); }
+.need-marker.delivery  { background: #9b59b6; }
+.need-marker.errand    { background: #3498db; }
+.need-marker.assist    { background: #e74c3c; }
+
+.runner-marker {
+  width: 20px;
+  height: 20px;
+  background: var(--accent);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--accent-glow), 0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* ===================================================================
+   ANIMATIONS
+   =================================================================== */
+@keyframes slide-up {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-in {
+  animation: slide-up 0.3s ease-out;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ================================================================
+     SCREEN 1: TRIP SETUP
+     ================================================================ -->
+<div id="setup-screen" class="screen active">
+  <div class="setup-header animate-in">
+    <h1>Heading out?</h1>
+    <p>Set up your trip — we'll find needs along the way.</p>
+  </div>
+
+  <!-- Destination -->
+  <div class="setup-group animate-in">
+    <label class="input-label" for="destination-input">Where are you going?</label>
+    <input
+      id="destination-input"
+      class="input-field"
+      type="text"
+      placeholder="e.g. Town center, Plovdiv, the pharmacy..."
+      autocomplete="off"
+      enterkeyhint="next"
+    >
+  </div>
+
+  <!-- Departure -->
+  <div class="setup-group animate-in">
+    <label class="input-label">When are you leaving?</label>
+    <div class="time-chips" id="time-chips">
+      <button class="time-chip" data-minutes="0">Now</button>
+      <button class="time-chip" data-minutes="15">15 min</button>
+      <button class="time-chip" data-minutes="30">30 min</button>
+      <button class="time-chip" data-minutes="60">1 hour</button>
+    </div>
+  </div>
+
+  <!-- Capacity -->
+  <div class="setup-group animate-in">
+    <label class="input-label">How much room?</label>
+    <div class="capacity-grid" id="capacity-grid">
+      <button class="capacity-option" data-cap="seats">
+        <span class="cap-icon">&#x1f6d7;</span>
+        Passenger seat
+      </button>
+      <button class="capacity-option" data-cap="cargo">
+        <span class="cap-icon">&#x1f4e6;</span>
+        Cargo space
+      </button>
+      <button class="capacity-option" data-cap="time">
+        <span class="cap-icon">&#x23f1;</span>
+        Extra time
+      </button>
+      <button class="capacity-option" data-cap="assist">
+        <span class="cap-icon">&#x1f4aa;</span>
+        Physical help
+      </button>
+    </div>
+  </div>
+
+  <!-- Go -->
+  <div class="setup-go animate-in">
+    <button id="go-btn" class="btn-primary" disabled>
+      Start trip
+    </button>
+  </div>
+</div>
+
+<!-- ================================================================
+     SCREEN 2: MAP + ACTIVE TRIP
+     ================================================================ -->
+<div id="map-screen" class="screen">
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="status-pill">
+      <div class="status-dot"></div>
+      <span id="status-text" class="status-stops">0 stops</span>
+    </div>
+    <button class="status-close-btn" id="trip-close-btn">End trip</button>
+  </div>
+
+  <!-- Map -->
+  <div id="map"></div>
+
+  <!-- Bottom sheet -->
+  <div id="bottom-sheet" class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-content">
+
+      <!-- Need detail (when pin tapped) -->
+      <div id="need-detail" class="need-detail">
+        <div class="need-detail-header">
+          <h3 id="need-detail-name">—</h3>
+          <span class="need-badge unmatched">Unmatched</span>
+        </div>
+
+        <div id="need-detail-body"></div>
+
+        <div class="need-actions">
+          <button class="btn-primary" id="accept-btn">Accept</button>
+          <button class="btn-secondary" id="dismiss-btn">&#x2715;</button>
+        </div>
+      </div>
+
+      <!-- Accepted cards -->
+      <div id="cards-section" class="cards-section">
+        <div class="cards-header">
+          <h3>Your stops</h3>
+          <span class="cards-count" id="cards-count">0 of 0</span>
+        </div>
+        <div id="cards-list"></div>
+
+        <div id="trip-done-section" class="trip-done-section">
+          <button class="btn-danger" id="trip-done-btn">Trip done</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     SCREEN 3: COMPLETE
+     ================================================================ -->
+<div id="complete-screen" class="screen">
+  <div class="complete-icon">&#x2705;</div>
+  <div class="complete-title">Trip complete</div>
+  <div class="complete-subtitle">Thanks for helping your community.</div>
+  <div class="complete-stats">
+    <div class="stat">
+      <div class="stat-value" id="stat-delivered">0</div>
+      <div class="stat-label">Delivered</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-stops">0</div>
+      <div class="stat-label">Stops</div>
+    </div>
+  </div>
+  <div class="complete-actions">
+    <button class="btn-primary" id="new-trip-btn">Start another trip</button>
+  </div>
+</div>
+
+<script>
+// =====================================================================
+// Rural Run — Runner UI (Agent G2)
+// Types reference: src/shared/types.ts (EventKind, EventEnvelope, etc.)
+// =====================================================================
+
+(function() {
+  'use strict';
+
+  // -----------------------------------------------------------------
+  // MOCK DATA — simulated needs near a route
+  // In production this comes from StateMachine.getUnmatchedNeeds()
+  // -----------------------------------------------------------------
+
+  // A sample route polyline (roughly a rural path near Plovdiv, BG)
+  const ROUTE_COORDS = [
+    [42.135, 24.740],  // start — village
+    [42.140, 24.745],
+    [42.148, 24.750],
+    [42.155, 24.755],
+    [42.160, 24.760],
+    [42.168, 24.770],
+    [42.175, 24.780],
+    [42.180, 24.790],
+    [42.185, 24.800],
+    [42.190, 24.810],
+    [42.198, 24.820],
+    [42.205, 24.830],
+    [42.210, 24.840],
+    [42.218, 24.845],
+    [42.225, 24.850],  // end — town
+  ];
+
+  const MOCK_NEEDS = [
+    {
+      id: 'need-001',
+      pubkey: 'ab12cd34',
+      display_name: 'Baba Maria',
+      what: 'Heart medication from the pharmacy — Metoprolol 50mg',
+      by_when: Date.now() / 1000 + 7200,
+      location: 'Near the church, yellow house',
+      lat: 42.152,
+      lng: 24.753,
+      category: 'pickup',
+      resource_footprint: {
+        seat: false,
+        cargo: 'Small box of medicine',
+        time_on_location: 10,
+        physical_assistance: false,
+      },
+    },
+    {
+      id: 'need-002',
+      pubkey: 'ef56gh78',
+      display_name: 'Stoyan',
+      what: 'Two bags of feed from the agricultural supply store',
+      by_when: Date.now() / 1000 + 10800,
+      location: 'Farm road, past the bridge',
+      lat: 42.172,
+      lng: 24.775,
+      category: 'delivery',
+      resource_footprint: {
+        seat: false,
+        cargo: '2 bags, ~25kg each',
+        time_on_location: 15,
+        physical_assistance: true,
+      },
+    },
+    {
+      id: 'need-003',
+      pubkey: 'ij90kl12',
+      display_name: 'Milena',
+      what: 'Ride to the clinic in town — regular checkup',
+      by_when: Date.now() / 1000 + 5400,
+      location: 'Bus stop by the school',
+      lat: 42.145,
+      lng: 24.748,
+      category: 'errand',
+      resource_footprint: {
+        seat: true,
+        cargo: '',
+        time_on_location: 5,
+        physical_assistance: false,
+      },
+    },
+    {
+      id: 'need-004',
+      pubkey: 'mn34op56',
+      display_name: 'Georgi',
+      what: 'Help moving a heavy table from the shed to the front room',
+      by_when: Date.now() / 1000 + 14400,
+      location: 'Last house on the hill',
+      lat: 42.195,
+      lng: 24.815,
+      category: 'assist',
+      resource_footprint: {
+        seat: false,
+        cargo: 'Large table',
+        time_on_location: 20,
+        physical_assistance: true,
+      },
+    },
+    {
+      id: 'need-005',
+      pubkey: 'qr78st90',
+      display_name: 'Elena',
+      what: 'Fresh bread from the bakery — 3 loaves',
+      by_when: Date.now() / 1000 + 3600,
+      location: 'Red gate, across from the fountain',
+      lat: 42.163,
+      lng: 24.763,
+      category: 'pickup',
+      resource_footprint: {
+        seat: false,
+        cargo: '3 loaves of bread',
+        time_on_location: 5,
+        physical_assistance: false,
+      },
+    },
+    {
+      id: 'need-006',
+      pubkey: 'uv12wx34',
+      display_name: 'Todor',
+      what: 'Envelope to be posted at the post office in town',
+      by_when: Date.now() / 1000 + 9000,
+      location: 'Next to the village shop',
+      lat: 42.138,
+      lng: 24.743,
+      category: 'delivery',
+      resource_footprint: {
+        seat: false,
+        cargo: 'One envelope',
+        time_on_location: 5,
+        physical_assistance: false,
+      },
+    },
+  ];
+
+  // Category → icon mapping
+  const CAT_ICONS = {
+    pickup:   '\u{1F6D2}',  // shopping cart
+    delivery: '\u{1F4E6}',  // package
+    errand:   '\u{1F3C3}',  // runner
+    assist:   '\u{1F91D}',  // handshake
+  };
+
+  // -----------------------------------------------------------------
+  // STATE
+  // -----------------------------------------------------------------
+  let tripConfig = {
+    destination: '',
+    departsAt: null,    // unix timestamp
+    capacity: {
+      seats: false,
+      cargo: false,
+      time: false,
+      assist: false,
+    },
+  };
+
+  let acceptedNeeds = [];   // array of need objects
+  let fulfilledIds = new Set();
+  let map = null;
+  let routeLine = null;
+  let needMarkers = {};     // need.id → L.marker
+  let currentDetailNeed = null;
+
+  // -----------------------------------------------------------------
+  // DOM REFS
+  // -----------------------------------------------------------------
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => document.querySelectorAll(sel);
+
+  const setupScreen    = $('#setup-screen');
+  const mapScreen      = $('#map-screen');
+  const completeScreen = $('#complete-screen');
+
+  const destInput  = $('#destination-input');
+  const goBtn      = $('#go-btn');
+  const timeChips  = $('#time-chips');
+  const capGrid    = $('#capacity-grid');
+
+  const statusText = $('#status-text');
+  const sheet      = $('#bottom-sheet');
+  const needDetail = $('#need-detail');
+  const cardsSection = $('#cards-section');
+  const cardsList    = $('#cards-list');
+  const cardsCount   = $('#cards-count');
+  const tripDoneSection = $('#trip-done-section');
+
+  // -----------------------------------------------------------------
+  // SCREEN TRANSITIONS
+  // -----------------------------------------------------------------
+  function showScreen(screenEl) {
+    $$('.screen').forEach(s => s.classList.remove('active'));
+    screenEl.classList.add('active');
+  }
+
+  // -----------------------------------------------------------------
+  // SETUP SCREEN LOGIC
+  // -----------------------------------------------------------------
+  function updateGoButton() {
+    const hasDest = destInput.value.trim().length > 0;
+    const hasTime = !!timeChips.querySelector('.selected');
+    const hasCap  = !!capGrid.querySelector('.selected');
+    goBtn.disabled = !(hasDest && hasTime && hasCap);
+  }
+
+  destInput.addEventListener('input', updateGoButton);
+
+  // Time chips — single select
+  timeChips.addEventListener('click', (e) => {
+    const chip = e.target.closest('.time-chip');
+    if (!chip) return;
+    timeChips.querySelectorAll('.time-chip').forEach(c => c.classList.remove('selected'));
+    chip.classList.add('selected');
+    updateGoButton();
+  });
+
+  // Capacity — multi select
+  capGrid.addEventListener('click', (e) => {
+    const opt = e.target.closest('.capacity-option');
+    if (!opt) return;
+    opt.classList.toggle('selected');
+    updateGoButton();
+  });
+
+  // Go button
+  goBtn.addEventListener('click', () => {
+    const selectedTime = timeChips.querySelector('.time-chip.selected');
+    const minutes = parseInt(selectedTime.dataset.minutes, 10);
+
+    tripConfig.destination = destInput.value.trim();
+    tripConfig.departsAt = Math.floor(Date.now() / 1000) + minutes * 60;
+
+    capGrid.querySelectorAll('.capacity-option.selected').forEach(opt => {
+      tripConfig.capacity[opt.dataset.cap] = true;
+    });
+
+    startTrip();
+  });
+
+  // -----------------------------------------------------------------
+  // MAP INITIALIZATION
+  // -----------------------------------------------------------------
+  function initMap() {
+    if (map) return;
+
+    map = L.map('map', {
+      zoomControl: false,
+      attributionControl: true,
+    });
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap',
+    }).addTo(map);
+  }
+
+  // -----------------------------------------------------------------
+  // START TRIP
+  // -----------------------------------------------------------------
+  function startTrip() {
+    showScreen(mapScreen);
+    initMap();
+
+    // Draw route
+    routeLine = L.polyline(ROUTE_COORDS, {
+      color: '#4ecdc4',
+      weight: 4,
+      opacity: 0.8,
+      dashArray: '8, 8',
+    }).addTo(map);
+
+    // Fit map to route
+    map.fitBounds(routeLine.getBounds().pad(0.15));
+
+    // Runner marker at start
+    const runnerIcon = L.divIcon({
+      className: '',
+      html: '<div class="runner-marker"></div>',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+    });
+    L.marker(ROUTE_COORDS[0], { icon: runnerIcon, zIndexOffset: 1000 }).addTo(map);
+
+    // Destination marker at end
+    const destIcon = L.divIcon({
+      className: '',
+      html: '<div style="width:14px;height:14px;background:#fff;border:3px solid var(--accent);border-radius:50%;box-shadow:0 0 8px rgba(78,205,196,0.4);"></div>',
+      iconSize: [14, 14],
+      iconAnchor: [7, 7],
+    });
+    L.marker(ROUTE_COORDS[ROUTE_COORDS.length - 1], { icon: destIcon }).addTo(map);
+
+    // Place need pins
+    MOCK_NEEDS.forEach(need => {
+      addNeedPin(need);
+    });
+
+    // Show cards sheet in peek mode after a moment
+    setTimeout(() => {
+      showCardsSheet();
+    }, 600);
+
+    updateStatusBar();
+  }
+
+  // -----------------------------------------------------------------
+  // NEED PINS
+  // -----------------------------------------------------------------
+  function addNeedPin(need) {
+    const cat = need.category || 'pickup';
+    const icon = CAT_ICONS[cat] || '\u{1F4CD}';
+
+    const markerIcon = L.divIcon({
+      className: '',
+      html: `<div class="need-marker ${cat}"><span class="need-marker-inner">${icon}</span></div>`,
+      iconSize: [36, 36],
+      iconAnchor: [18, 36],
+    });
+
+    const marker = L.marker([need.lat, need.lng], {
+      icon: markerIcon,
+      zIndexOffset: 500,
+    }).addTo(map);
+
+    marker.on('click', () => {
+      showNeedDetail(need);
+    });
+
+    needMarkers[need.id] = marker;
+  }
+
+  // -----------------------------------------------------------------
+  // NEED DETAIL SHEET
+  // -----------------------------------------------------------------
+  function showNeedDetail(need) {
+    currentDetailNeed = need;
+
+    // Already accepted?
+    const alreadyAccepted = acceptedNeeds.some(n => n.id === need.id);
+
+    $('#need-detail-name').textContent = need.display_name || 'Anonymous';
+
+    const deadlineStr = formatDeadline(need.by_when);
+    const fp = need.resource_footprint;
+
+    let bodyHTML = '';
+    bodyHTML += needInfoRow('\u{1F4CB}', 'What', need.what);
+    bodyHTML += needInfoRow('\u{1F4CD}', 'Where', need.location);
+    bodyHTML += needInfoRow('\u{23F0}', 'By when', deadlineStr);
+
+    if (fp.cargo) {
+      bodyHTML += needInfoRow('\u{1F4E6}', 'Cargo', fp.cargo);
+    }
+    if (fp.time_on_location) {
+      bodyHTML += needInfoRow('\u{23F1}', 'Time needed', fp.time_on_location + ' min on site');
+    }
+    if (fp.seat) {
+      bodyHTML += needInfoRow('\u{1F6D7}', 'Seat', 'Needs a passenger seat');
+    }
+    if (fp.physical_assistance) {
+      bodyHTML += needInfoRow('\u{1F4AA}', 'Physical help', 'Requires carrying / lifting');
+    }
+
+    $('#need-detail-body').innerHTML = bodyHTML;
+
+    // Show/hide accept button
+    const acceptBtn = $('#accept-btn');
+    if (alreadyAccepted) {
+      acceptBtn.textContent = 'Accepted';
+      acceptBtn.disabled = true;
+    } else {
+      acceptBtn.textContent = 'Accept';
+      acceptBtn.disabled = false;
+    }
+
+    needDetail.classList.add('visible');
+    cardsSection.classList.remove('visible');
+    sheet.classList.add('open');
+  }
+
+  function needInfoRow(icon, label, value) {
+    return `
+      <div class="need-info-row">
+        <div class="need-info-icon">${icon}</div>
+        <div class="need-info-content">
+          <div class="label">${label}</div>
+          <div class="value">${value}</div>
+        </div>
+      </div>`;
+  }
+
+  function formatDeadline(unixTs) {
+    const d = new Date(unixTs * 1000);
+    const now = Date.now();
+    const diff = (unixTs * 1000) - now;
+    if (diff <= 0) return 'Expired';
+    const hours = Math.floor(diff / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    if (hours > 0) return `${hours}h ${mins}m from now`;
+    return `${mins}m from now`;
+  }
+
+  // Accept button
+  $('#accept-btn').addEventListener('click', () => {
+    if (!currentDetailNeed) return;
+    acceptNeed(currentDetailNeed);
+    closeSheet();
+    setTimeout(() => showCardsSheet(), 300);
+  });
+
+  // Dismiss button
+  $('#dismiss-btn').addEventListener('click', () => {
+    closeSheet();
+    setTimeout(() => showCardsSheet(), 300);
+  });
+
+  // -----------------------------------------------------------------
+  // ACCEPT NEED
+  // -----------------------------------------------------------------
+  function acceptNeed(need) {
+    if (acceptedNeeds.some(n => n.id === need.id)) return;
+    acceptedNeeds.push(need);
+
+    // Remove pin from map (it's now an accepted stop)
+    if (needMarkers[need.id]) {
+      map.removeLayer(needMarkers[need.id]);
+      delete needMarkers[need.id];
+    }
+
+    // Sort accepted by proximity along route
+    sortByRouteOrder();
+
+    updateStatusBar();
+    renderCards();
+  }
+
+  // Sort accepted needs by proximity to route points (rough ordering)
+  function sortByRouteOrder() {
+    acceptedNeeds.sort((a, b) => {
+      const idxA = closestRouteIndex(a.lat, a.lng);
+      const idxB = closestRouteIndex(b.lat, b.lng);
+      return idxA - idxB;
+    });
+  }
+
+  function closestRouteIndex(lat, lng) {
+    let minDist = Infinity;
+    let minIdx = 0;
+    ROUTE_COORDS.forEach((coord, i) => {
+      const d = Math.hypot(coord[0] - lat, coord[1] - lng);
+      if (d < minDist) {
+        minDist = d;
+        minIdx = i;
+      }
+    });
+    return minIdx;
+  }
+
+  // -----------------------------------------------------------------
+  // STATUS BAR
+  // -----------------------------------------------------------------
+  function updateStatusBar() {
+    const total = acceptedNeeds.length;
+    const done = fulfilledIds.size;
+    if (total === 0) {
+      statusText.innerHTML = '0 stops';
+    } else {
+      statusText.innerHTML = `${done}/${total} <span>stops done</span>`;
+    }
+  }
+
+  // -----------------------------------------------------------------
+  // CARDS SHEET
+  // -----------------------------------------------------------------
+  function showCardsSheet() {
+    needDetail.classList.remove('visible');
+    cardsSection.classList.add('visible');
+    renderCards();
+    sheet.classList.add('open');
+  }
+
+  function closeSheet() {
+    sheet.classList.remove('open');
+    needDetail.classList.remove('visible');
+    cardsSection.classList.remove('visible');
+  }
+
+  function renderCards() {
+    const total = acceptedNeeds.length;
+    const done = fulfilledIds.size;
+    cardsCount.textContent = `${done} of ${total} done`;
+
+    if (total === 0) {
+      cardsList.innerHTML = '<p style="color:var(--text-dim);font-size:14px;text-align:center;padding:20px 0;">Tap a pin on the map to accept a need.</p>';
+      tripDoneSection.classList.remove('visible');
+      return;
+    }
+
+    let html = '';
+    acceptedNeeds.forEach((need, i) => {
+      const isFulfilled = fulfilledIds.has(need.id);
+      html += `
+        <div class="stop-card ${isFulfilled ? 'fulfilled' : ''}" data-need-id="${need.id}">
+          <div class="stop-number">${isFulfilled ? '\u2713' : (i + 1)}</div>
+          <div class="stop-info">
+            <div class="stop-name">${need.display_name || 'Anonymous'}</div>
+            <div class="stop-what">${need.what}</div>
+            <div class="stop-where">${need.location}</div>
+          </div>
+          <button class="stop-done-btn" data-need-id="${need.id}">
+            ${isFulfilled ? 'Done' : 'Done'}
+          </button>
+        </div>`;
+    });
+
+    cardsList.innerHTML = html;
+
+    // Show "Trip done" if all fulfilled
+    if (done === total && total > 0) {
+      tripDoneSection.classList.add('visible');
+    } else {
+      tripDoneSection.classList.remove('visible');
+    }
+  }
+
+  // Card done buttons
+  cardsList.addEventListener('click', (e) => {
+    const btn = e.target.closest('.stop-done-btn');
+    if (!btn) return;
+    const needId = btn.dataset.needId;
+    if (fulfilledIds.has(needId)) return;
+
+    fulfilledIds.add(needId);
+    updateStatusBar();
+    renderCards();
+  });
+
+  // -----------------------------------------------------------------
+  // TRIP DONE / END TRIP
+  // -----------------------------------------------------------------
+  $('#trip-done-btn').addEventListener('click', finishTrip);
+  $('#trip-close-btn').addEventListener('click', () => {
+    if (acceptedNeeds.length > 0 && fulfilledIds.size < acceptedNeeds.length) {
+      if (!confirm('You have unfinished stops. End trip anyway?')) return;
+    }
+    finishTrip();
+  });
+
+  function finishTrip() {
+    const delivered = fulfilledIds.size;
+    const stops = acceptedNeeds.length;
+
+    $('#stat-delivered').textContent = delivered;
+    $('#stat-stops').textContent = stops;
+
+    showScreen(completeScreen);
+  }
+
+  // New trip
+  $('#new-trip-btn').addEventListener('click', () => {
+    // Reset state
+    acceptedNeeds = [];
+    fulfilledIds = new Set();
+    currentDetailNeed = null;
+    tripConfig = {
+      destination: '',
+      departsAt: null,
+      capacity: { seats: false, cargo: false, time: false, assist: false },
+    };
+
+    // Reset setup form
+    destInput.value = '';
+    timeChips.querySelectorAll('.time-chip').forEach(c => c.classList.remove('selected'));
+    capGrid.querySelectorAll('.capacity-option').forEach(c => c.classList.remove('selected'));
+    goBtn.disabled = true;
+
+    // Clean map
+    if (map) {
+      map.eachLayer(layer => {
+        if (layer instanceof L.TileLayer) return;
+        map.removeLayer(layer);
+      });
+      needMarkers = {};
+      routeLine = null;
+    }
+
+    closeSheet();
+    showScreen(setupScreen);
+  });
+
+  // -----------------------------------------------------------------
+  // SHEET DRAG (simple swipe-down to close)
+  // -----------------------------------------------------------------
+  let sheetStartY = 0;
+  let sheetDragging = false;
+
+  const sheetHandle = sheet.querySelector('.sheet-handle');
+  sheetHandle.addEventListener('touchstart', (e) => {
+    sheetStartY = e.touches[0].clientY;
+    sheetDragging = true;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!sheetDragging) return;
+    const dy = e.touches[0].clientY - sheetStartY;
+    if (dy > 80) {
+      sheetDragging = false;
+      closeSheet();
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => {
+    sheetDragging = false;
+  }, { passive: true });
+
+  // Tap map to re-open cards sheet when closed
+  document.getElementById('map').addEventListener('click', (e) => {
+    // Only open if sheet is closed and not clicking a marker
+    if (!sheet.classList.contains('open') && acceptedNeeds.length > 0) {
+      // Small delay to let marker clicks fire first
+      setTimeout(() => {
+        if (!sheet.classList.contains('open')) {
+          showCardsSheet();
+        }
+      }, 100);
+    }
+  });
+
+})();
+</script>
+
+</body>
+</html>
