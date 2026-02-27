@@ -198,7 +198,7 @@ describe('BluetoothTransportAdapter', () => {
       const envelope = makeEnvelope({ kind: 2 });
       await adapter.publish(envelope);
 
-      const written = char.writeValueWithResponse.mock.calls[0][0] as Uint8Array;
+      const written = char.writeValueWithResponse.mock.calls[0]![0] as Uint8Array;
       const payload = new TextDecoder().decode(written.slice(4));
       const decoded = JSON.parse(payload) as EventEnvelope;
 
@@ -260,8 +260,8 @@ describe('BluetoothTransportAdapter', () => {
       char.notify(makeChunkView(envelope, 42));
 
       expect(received).toHaveLength(1);
-      expect(received[0].id).toBe(envelope.id);
-      expect(received[0].kind).toBe(1);
+      expect(received[0]!.id).toBe(envelope.id);
+      expect(received[0]!.kind).toBe(1);
     });
 
     it('discards a packet with a malformed JSON body', () => {
@@ -383,7 +383,7 @@ describe('BluetoothTransportAdapter', () => {
 
       handle(rawChunk(encoded.slice(half), 1, 2));
       expect(received).toHaveLength(1);
-      expect(received[0].kind).toBe(3);
+      expect(received[0]!.kind).toBe(3);
     });
 
     it('handles a single-chunk message', () => {
@@ -400,7 +400,7 @@ describe('BluetoothTransportAdapter', () => {
       })._handleIncoming('peer', makeChunkView(envelope, 1));
 
       expect(received).toHaveLength(1);
-      expect(received[0].id).toBe(envelope.id);
+      expect(received[0]!.id).toBe(envelope.id);
     });
 
     it('keeps buffers for different message ids separate', () => {
