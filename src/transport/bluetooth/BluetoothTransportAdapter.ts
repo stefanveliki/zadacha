@@ -1,13 +1,4 @@
-import { EventEnvelope } from '../../types/EventEnvelope';
-
-/**
- * TransportAdapter interface as defined in InterfaceContracts v0.1.
- */
-export interface TransportAdapter {
-  listen(onEvent: (envelope: EventEnvelope) => void): void;
-  publish(envelope: EventEnvelope): Promise<void>;
-  isAvailable(): boolean;
-}
+import { EventEnvelope, TransportAdapter } from '../../shared/types';
 
 // ─── BLE constants ────────────────────────────────────────────────────────────
 

@@ -7,7 +7,7 @@
  */
 
 import { BluetoothTransportAdapter } from './BluetoothTransportAdapter';
-import { EventEnvelope } from '../../types/EventEnvelope';
+import { EventEnvelope } from '../../shared/types';
 
 // ─── Minimal local types for mocking ─────────────────────────────────────────
 
