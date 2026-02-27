@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#2d6a4f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Rural Run</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUnVyYWwgUnVuIiwic2hvcnRfbmFtZSI6IlJ1cmFsUnVuIiwiZGVzY3JpcHRpb24iOiJBdHRhY2ggdW5tZXQgbmVlZHMgdG8gdHJpcHMgYmVmb3JlIHRoZSB3aW5kb3cgY2xvc2VzLiIsInN0YXJ0X3VybCI6Ii4vaW5kZXguaHRtbCIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiNmZmZiZjEiLCJ0aGVtZV9jb2xvciI6IiMyZDZhNGYiLCJpY29ucyI6W119">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#2d6a4f;--green-light:#40916c;--green-pale:#d8f3dc;
+  --orange:#e76f51;--yellow:#f4a261;
+  --bg:#fffbf1;--card:#fff;--text:#1b1b1b;--muted:#6b6b6b;
+  --radius:12px;--shadow:0 1px 4px rgba(0,0,0,.08);
+}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.5;
+  min-height:100vh;min-height:100dvh;padding-bottom:72px;overflow-x:hidden}
+h1{font-size:1.25rem;font-weight:700}
+h2{font-size:1.1rem;font-weight:600;margin-bottom:.5rem}
+h3{font-size:.95rem;font-weight:600}
+
+/* ── Header ────────────────────────────────────────────────────────── */
+.header{position:sticky;top:0;z-index:100;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.header h1{color:#fff;font-size:1.15rem}
+.transport-dots{display:flex;gap:6px;align-items:center}
+.dot{width:10px;height:10px;border-radius:50%;background:#666;opacity:.5}
+.dot.active{background:#95d5b2;opacity:1}
+.dot-label{font-size:.6rem;color:rgba(255,255,255,.7);text-align:center;line-height:1}
+.transport-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+
+/* ── Bottom nav ────────────────────────────────────────────────────── */
+.nav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--card);
+  display:flex;border-top:1px solid #e0e0e0;padding:4px 0 env(safe-area-inset-bottom,8px)}
+.nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  border:none;background:transparent;padding:8px 4px;font-size:.65rem;
+  color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.nav button.active{color:var(--green);font-weight:600}
+.nav button svg{width:22px;height:22px}
+
+/* ── Screens / pages ───────────────────────────────────────────────── */
+.screen{display:none;padding:16px;animation:fadeIn .2s ease}
+.screen.visible{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ── Cards ─────────────────────────────────────────────────────────── */
+.card{background:var(--card);border-radius:var(--radius);padding:14px 16px;
+  margin-bottom:12px;box-shadow:var(--shadow);cursor:pointer;
+  transition:box-shadow .15s}
+.card:active{box-shadow:0 2px 8px rgba(0,0,0,.14)}
+.card-title{font-weight:600;font-size:.95rem;margin-bottom:4px}
+.card-sub{font-size:.8rem;color:var(--muted)}
+.card-meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.7rem;
+  font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.badge-open{background:var(--green-pale);color:var(--green)}
+.badge-accepted{background:#fce4b8;color:#b45309}
+.badge-fulfilled{background:#bfdbfe;color:#1e40af}
+.badge-confirmed{background:#d1fae5;color:#065f46}
+.badge-unmatched{background:#fee2e2;color:#991b1b}
+.badge-released{background:#e5e7eb;color:#4b5563}
+
+/* ── Buttons ───────────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  border:none;border-radius:var(--radius);padding:12px 20px;font-size:.9rem;
+  font-weight:600;cursor:pointer;transition:opacity .15s;
+  -webkit-tap-highlight-color:transparent}
+.btn:active{opacity:.7}
+.btn-primary{background:var(--green);color:#fff}
+.btn-secondary{background:var(--green-pale);color:var(--green)}
+.btn-danger{background:#fee2e2;color:#991b1b}
+.btn-small{padding:8px 14px;font-size:.8rem;border-radius:8px}
+.btn-block{width:100%}
+
+/* ── FAB ───────────────────────────────────────────────────────────── */
+.fab{position:fixed;bottom:80px;right:16px;z-index:90;width:56px;height:56px;
+  border-radius:50%;border:none;background:var(--green);color:#fff;
+  font-size:1.6rem;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent}
+.fab:active{transform:scale(.92)}
+
+/* ── Forms ─────────────────────────────────────────────────────────── */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:.8rem;font-weight:600;
+  color:var(--muted);margin-bottom:4px}
+.form-group input,.form-group textarea,.form-group select{
+  width:100%;padding:10px 12px;border:1.5px solid #d0d0d0;border-radius:8px;
+  font-size:.95rem;font-family:inherit;background:var(--card)}
+.form-group input:focus,.form-group textarea:focus{outline:none;
+  border-color:var(--green);box-shadow:0 0 0 2px var(--green-pale)}
+.form-group textarea{resize:vertical;min-height:60px}
+.form-row{display:flex;gap:10px}
+.form-row .form-group{flex:1}
+.checkbox-row{display:flex;align-items:center;gap:8px}
+.checkbox-row input[type=checkbox]{width:20px;height:20px;accent-color:var(--green)}
+
+/* ── Overlay / modal ───────────────────────────────────────────────── */
+.overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.4)}
+.overlay.visible{display:flex;align-items:flex-end;justify-content:center}
+.overlay-content{background:var(--bg);border-radius:20px 20px 0 0;
+  width:100%;max-width:500px;max-height:90vh;overflow-y:auto;
+  padding:20px 16px env(safe-area-inset-bottom,20px);animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
+.overlay-header{display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:16px}
+.overlay-close{border:none;background:transparent;font-size:1.4rem;cursor:pointer;
+  padding:4px;color:var(--muted)}
+
+/* ── Detail view ───────────────────────────────────────────────────── */
+.detail-row{display:flex;justify-content:space-between;padding:8px 0;
+  border-bottom:1px solid #f0f0f0;font-size:.85rem}
+.detail-label{color:var(--muted);font-weight:500}
+.detail-value{font-weight:600;text-align:right;max-width:60%;word-break:break-word}
+.actions-bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+
+/* ── Setup screen ──────────────────────────────────────────────────── */
+.setup-overlay{display:none;position:fixed;inset:0;z-index:300;background:var(--bg);
+  padding:16px;overflow-y:auto}
+.setup-overlay.visible{display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center}
+.setup-overlay h1{font-size:1.5rem;margin-bottom:8px;color:var(--green)}
+.setup-overlay p{color:var(--muted);margin-bottom:24px;max-width:320px}
+.setup-overlay .form-group{text-align:left;width:100%;max-width:320px}
+
+/* ── Empty state ───────────────────────────────────────────────────── */
+.empty{text-align:center;padding:48px 16px;color:var(--muted);font-size:.9rem}
+.empty svg{width:48px;height:48px;margin-bottom:12px;opacity:.4}
+
+/* ── Toast ─────────────────────────────────────────────────────────── */
+.toast{position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:400;
+  background:var(--text);color:#fff;padding:10px 20px;border-radius:99px;
+  font-size:.85rem;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,.2);
+  opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ SETUP SCREEN ═══════════════ -->
+<div id="setup" class="setup-overlay">
+  <h1>Rural Run</h1>
+  <p>Attach unmet needs to trips before the window closes. Neighbors helping neighbors — no servers, no accounts.</p>
+  <div class="form-group">
+    <label for="setup-name">Your name (optional)</label>
+    <input id="setup-name" type="text" placeholder="e.g. Baba Maria" autocomplete="name">
+  </div>
+  <br>
+  <button class="btn btn-primary btn-block" onclick="completeSetup()" style="max-width:320px">Get started</button>
+</div>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="header">
+  <h1>Rural Run</h1>
+  <div class="transport-dots">
+    <div class="transport-item"><div class="dot" id="dot-bt"></div><span class="dot-label">BT</span></div>
+    <div class="transport-item"><div class="dot" id="dot-wifi"></div><span class="dot-label">WiFi</span></div>
+    <div class="transport-item"><div class="dot" id="dot-lora"></div><span class="dot-label">LoRa</span></div>
+    <div class="transport-item"><div class="dot" id="dot-net"></div><span class="dot-label">Net</span></div>
+  </div>
+</header>
+
+<!-- ═══════════════ TRIPS SCREEN ═══════════════ -->
+<section id="screen-trips" class="screen">
+  <h2>Active trips</h2>
+  <div id="trips-list"></div>
+</section>
+
+<!-- ═══════════════ NEEDS SCREEN ═══════════════ -->
+<section id="screen-needs" class="screen">
+  <h2>Unmatched needs</h2>
+  <div id="needs-list"></div>
+</section>
+
+<!-- ═══════════════ ACTIVITY SCREEN ═══════════════ -->
+<section id="screen-activity" class="screen">
+  <h2>My trips</h2>
+  <div id="my-trips-list"></div>
+  <h2 style="margin-top:20px">My needs</h2>
+  <div id="my-needs-list"></div>
+  <h2 style="margin-top:20px">My matches</h2>
+  <div id="my-matches-list"></div>
+</section>
+
+<!-- ═══════════════ SETTINGS SCREEN ═══════════════ -->
+<section id="screen-settings" class="screen">
+  <h2>Identity</h2>
+  <div class="card" style="cursor:default">
+    <div class="detail-row">
+      <span class="detail-label">Public key</span>
+      <span class="detail-value" id="settings-pubkey" style="font-size:.7rem;font-family:monospace">—</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Display name</span>
+      <span class="detail-value" id="settings-name">—</span>
+    </div>
+  </div>
+
+  <h2>Transport status</h2>
+  <div class="card" style="cursor:default" id="transport-details"></div>
+
+  <h2 style="margin-top:20px">Guardians</h2>
+  <div class="form-group">
+    <label for="guardian-input">Guardian public keys (comma-separated)</label>
+    <textarea id="guardian-input" rows="2" placeholder="pubkey1, pubkey2, pubkey3"></textarea>
+  </div>
+  <button class="btn btn-secondary btn-small" onclick="doSetupGuardians()">Set guardians</button>
+
+  <h2 style="margin-top:20px">Recovery</h2>
+  <button class="btn btn-danger btn-small" onclick="doInitiateRecovery()">Initiate recovery</button>
+</section>
+
+<!-- ═══════════════ FAB ═══════════════ -->
+<button class="fab" id="fab" onclick="openForm()">+</button>
+
+<!-- ═══════════════ ANNOUNCE TRIP OVERLAY ═══════════════ -->
+<div id="overlay-trip" class="overlay" onclick="closeOverlayOutside(event, 'overlay-trip')">
+  <div class="overlay-content">
+    <div class="overlay-header">
+      <h2>Announce a trip</h2>
+      <button class="overlay-close" onclick="closeOverlay('overlay-trip')">&times;</button>
+    </div>
+    <div class="form-group">
+      <label for="trip-dest">Where are you going?</label>
+      <input id="trip-dest" type="text" placeholder="e.g. Town market">
+    </div>
+    <div class="form-group">
+      <label for="trip-route">Route (optional)</label>
+      <input id="trip-route" type="text" placeholder="e.g. Through the valley road">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="trip-departs">Departing</label>
+        <input id="trip-departs" type="datetime-local">
+      </div>
+      <div class="form-group">
+        <label for="trip-returns">Back by (optional)</label>
+        <input id="trip-returns" type="datetime-local">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="trip-seats">Seats available</label>
+        <input id="trip-seats" type="number" value="1" min="0" max="20">
+      </div>
+      <div class="form-group">
+        <label for="trip-time">Extra minutes</label>
+        <input id="trip-time" type="number" value="30" min="0" max="480">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="trip-cargo">Cargo space</label>
+      <input id="trip-cargo" type="text" placeholder="e.g. half a trunk">
+    </div>
+    <div class="form-group">
+      <label for="trip-range">Max detour range</label>
+      <input id="trip-range" type="text" placeholder="e.g. 5 km">
+    </div>
+    <div class="checkbox-row" style="margin-bottom:16px">
+      <input id="trip-physical" type="checkbox">
+      <label for="trip-physical">Can help physically (carry, lift, assist)</label>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="submitTrip()">Announce trip</button>
+  </div>
+</div>
+
+<!-- ═══════════════ SUBMIT NEED OVERLAY ═══════════════ -->
+<div id="overlay-need" class="overlay" onclick="closeOverlayOutside(event, 'overlay-need')">
+  <div class="overlay-content">
+    <div class="overlay-header">
+      <h2>Submit a need</h2>
+      <button class="overlay-close" onclick="closeOverlay('overlay-need')">&times;</button>
+    </div>
+    <div class="form-group">
+      <label for="need-what">What do you need?</label>
+      <textarea id="need-what" placeholder="e.g. Heart medication from the pharmacy in town"></textarea>
+    </div>
+    <div class="form-group">
+      <label for="need-location">Your location</label>
+      <input id="need-location" type="text" placeholder="e.g. Village center, near the church">
+    </div>
+    <div class="form-group">
+      <label for="need-by">Needed by</label>
+      <input id="need-by" type="datetime-local">
+    </div>
+    <div class="form-group">
+      <label for="need-cargo">Size / weight</label>
+      <input id="need-cargo" type="text" placeholder="e.g. small box, 2 bags">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="need-time">Time on location (min)</label>
+        <input id="need-time" type="number" value="10" min="0">
+      </div>
+    </div>
+    <div class="checkbox-row">
+      <input id="need-seat" type="checkbox">
+      <label for="need-seat">I need a seat (ride)</label>
+    </div>
+    <div class="checkbox-row" style="margin-bottom:16px">
+      <input id="need-physical" type="checkbox">
+      <label for="need-physical">Requires physical assistance</label>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="submitNeed()">Submit need</button>
+  </div>
+</div>
+
+<!-- ═══════════════ TRIP DETAIL OVERLAY ═══════════════ -->
+<div id="overlay-trip-detail" class="overlay" onclick="closeOverlayOutside(event, 'overlay-trip-detail')">
+  <div class="overlay-content" id="trip-detail-content"></div>
+</div>
+
+<!-- ═══════════════ NEED DETAIL OVERLAY ═══════════════ -->
+<div id="overlay-need-detail" class="overlay" onclick="closeOverlayOutside(event, 'overlay-need-detail')">
+  <div class="overlay-content" id="need-detail-content"></div>
+</div>
+
+<!-- ═══════════════ TOAST ═══════════════ -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════ BOTTOM NAV ═══════════════ -->
+<nav class="nav">
+  <button onclick="showScreen('trips')" id="nav-trips" class="active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    Trips
+  </button>
+  <button onclick="showScreen('needs')" id="nav-needs">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+    Needs
+  </button>
+  <button onclick="showScreen('activity')" id="nav-activity">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+    Activity
+  </button>
+  <button onclick="showScreen('settings')" id="nav-settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    Settings
+  </button>
+</nav>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   Rural Run — PWA Application Logic
+   Implements UIActions (InterfaceContracts v0.1 §6) backed by in-memory
+   state. All code is vanilla JS, no frameworks, works offline.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+// ── Event Kind Registry ───────────────────────────────────────────────
+const EventKind = {
+  TRIP_ANNOUNCE: 1, NEED_SUBMIT: 2, MATCH_ACCEPT: 3, MATCH_FULFILL: 4,
+  MATCH_CONFIRM: 5, SLOT_RELEASE: 6, SLOT_RELEASE_ACK: 7,
+  TRIP_CLOSE: 8, TRIP_CANCEL: 9,
+  GUARDIAN_SET: 100, GUARDIAN_ROTATE: 101, KEY_ROTATE: 102,
+  RECOVERY_INIT: 103, RECOVERY_SHARD: 104,
+};
+
+// ── Local app state ───────────────────────────────────────────────────
+let myPubkey = '';
+let myName = '';
+let idCounter = 0;
+
+// In-memory stores (mirrors of what the Log + StateMachine would hold)
+const trips = [];     // TripState[]
+const needs = [];     // NeedState[]
+const matches = [];   // MatchState[]
+
+// Transport availability (simulated)
+const transports = {
+  bt: { available: false, name: 'Bluetooth' },
+  wifi: { available: false, name: 'WiFi' },
+  lora: { available: false, name: 'LoRa' },
+  net: { available: false, name: 'Internet' },
+};
+
+// ── Crypto helpers (simplified for standalone use) ────────────────────
+function generateId() {
+  idCounter++;
+  const arr = new Uint8Array(32);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function generateKeypair() {
+  const arr = new Uint8Array(32);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── Identity layer (simplified) ───────────────────────────────────────
+function buildEvent(kind, content) {
+  const id = generateId();
+  const now = Math.floor(Date.now() / 1000);
+  return {
+    id: id,
+    kind: kind,
+    pubkey: myPubkey,
+    created_at: now,
+    content: JSON.stringify(content),
+    sig: 'sig-' + id.slice(0, 16),
+  };
+}
+
+// ── State helpers ─────────────────────────────────────────────────────
+function findMatch(matchId) {
+  return matches.find(m => m.matchId === matchId);
+}
+
+function findTrip(tripId) {
+  return trips.find(t => t.trip.id === tripId);
+}
+
+function findNeed(needId) {
+  return needs.find(n => n.need.id === needId);
+}
+
+function parseContent(envelope) {
+  try { return JSON.parse(envelope.content); } catch { return null; }
+}
+
+// ── UIActions implementation (mirrors src/ui/actions.ts) ──────────────
+
+function announceTrip(params) {
+  const envelope = buildEvent(EventKind.TRIP_ANNOUNCE, params);
+  const cap = params.capacity;
+  trips.push({
+    trip: envelope,
+    remaining: { seats: cap.seats, cargo: cap.cargo, time_budget: cap.time_budget, physical_assistance: cap.physical_assistance },
+    attachedNeeds: [],
+    status: 'open',
+  });
+  persist();
+  render();
+  toast('Trip announced');
+}
+
+function doSubmitNeed(params) {
+  const envelope = buildEvent(EventKind.NEED_SUBMIT, params);
+  needs.push({ need: envelope, status: 'unmatched' });
+  persist();
+  render();
+  toast('Need submitted');
+}
+
+function acceptNeed(tripId, needId) {
+  const tripState = findTrip(tripId);
+  const needState = findNeed(needId);
+  if (!tripState || !needState) return;
+  const envelope = buildEvent(EventKind.MATCH_ACCEPT, { trip_id: tripId, need_id: needId });
+  const matchId = envelope.id;
+  matches.push({
+    matchId: matchId,
+    tripId: tripId,
+    needId: needId,
+    runnerPubkey: myPubkey,
+    requesterPubkey: needState.need.pubkey,
+    status: 'accepted',
+  });
+  needState.status = 'accepted';
+  needState.matchId = matchId;
+  tripState.attachedNeeds.push(needState);
+
+  // Decrement capacity
+  const nc = parseContent(needState.need);
+  if (nc && nc.resource_footprint) {
+    if (nc.resource_footprint.seat) tripState.remaining.seats = Math.max(0, tripState.remaining.seats - 1);
+    tripState.remaining.time_budget = Math.max(0, tripState.remaining.time_budget - (nc.resource_footprint.time_on_location || 0));
+    if (nc.resource_footprint.physical_assistance) tripState.remaining.physical_assistance = false;
+  }
+  persist();
+  render();
+  toast('Need accepted onto trip');
+}
+
+function fulfillNeed(matchId) {
+  const match = findMatch(matchId);
+  if (!match || match.status !== 'accepted') return;
+  match.status = 'fulfilled';
+  const ns = findNeed(match.needId);
+  if (ns) ns.status = 'fulfilled';
+  buildEvent(EventKind.MATCH_FULFILL, { trip_id: match.tripId, need_id: match.needId, match_id: matchId });
+  persist();
+  render();
+  toast('Marked as fulfilled');
+}
+
+function confirmFulfillment(matchId) {
+  const match = findMatch(matchId);
+  if (!match || match.status !== 'fulfilled') return;
+  match.status = 'confirmed';
+  const ns = findNeed(match.needId);
+  if (ns) ns.status = 'confirmed';
+  buildEvent(EventKind.MATCH_CONFIRM, { trip_id: match.tripId, need_id: match.needId, match_id: matchId });
+  persist();
+  render();
+  toast('Fulfillment confirmed!');
+}
+
+function releaseSlot(matchId, reason) {
+  const match = findMatch(matchId);
+  if (!match || match.status !== 'accepted') return;
+  const ns = findNeed(match.needId);
+  if (ns) {
+    ns.status = 'unmatched';
+    ns.matchId = undefined;
+  }
+  const ts = findTrip(match.tripId);
+  if (ts) {
+    ts.attachedNeeds = ts.attachedNeeds.filter(n => n.need.id !== match.needId);
+    // Restore capacity
+    if (ns) {
+      const nc = parseContent(ns.need);
+      if (nc && nc.resource_footprint) {
+        const tc = parseContent(ts.trip);
+        if (nc.resource_footprint.seat) ts.remaining.seats = Math.min(tc ? tc.capacity.seats : 99, ts.remaining.seats + 1);
+        ts.remaining.time_budget += (nc.resource_footprint.time_on_location || 0);
+        if (nc.resource_footprint.physical_assistance && tc) ts.remaining.physical_assistance = tc.capacity.physical_assistance;
+      }
+    }
+  }
+  const idx = matches.indexOf(match);
+  if (idx !== -1) matches.splice(idx, 1);
+  const content = { match_id: matchId, trip_id: match.tripId, need_id: match.needId };
+  if (reason) content.reason = reason;
+  buildEvent(EventKind.SLOT_RELEASE, content);
+  persist();
+  render();
+  toast('Slot released');
+}
+
+function closeTrip(tripId) {
+  const ts = findTrip(tripId);
+  if (!ts || ts.status !== 'open') return;
+  ts.status = 'closed';
+  buildEvent(EventKind.TRIP_CLOSE, { trip_id: tripId });
+  persist();
+  render();
+  toast('Trip closed');
+}
+
+function cancelTrip(tripId) {
+  const ts = findTrip(tripId);
+  if (!ts) return;
+  ts.status = 'cancelled';
+  buildEvent(EventKind.TRIP_CANCEL, { trip_id: tripId });
+  persist();
+  render();
+  toast('Trip cancelled');
+}
+
+// ── Persistence (localStorage) ────────────────────────────────────────
+function persist() {
+  try {
+    localStorage.setItem('rr_trips', JSON.stringify(trips));
+    localStorage.setItem('rr_needs', JSON.stringify(needs));
+    localStorage.setItem('rr_matches', JSON.stringify(matches));
+  } catch { /* quota exceeded — degrade silently */ }
+}
+
+function restore() {
+  try {
+    const t = localStorage.getItem('rr_trips');
+    const n = localStorage.getItem('rr_needs');
+    const m = localStorage.getItem('rr_matches');
+    if (t) { const parsed = JSON.parse(t); trips.length = 0; trips.push(...parsed); }
+    if (n) { const parsed = JSON.parse(n); needs.length = 0; needs.push(...parsed); }
+    if (m) { const parsed = JSON.parse(m); matches.length = 0; matches.push(...parsed); }
+  } catch { /* corrupted — start fresh */ }
+}
+
+// ── Time formatting ───────────────────────────────────────────────────
+function fmtTime(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts * 1000);
+  const now = new Date();
+  const diff = ts - Math.floor(Date.now() / 1000);
+  if (diff < 0) return 'Past';
+  if (diff < 3600) return Math.ceil(diff / 60) + ' min';
+  if (diff < 86400 && d.getDate() === now.getDate())
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function shortKey(key) {
+  if (!key) return '—';
+  return key.slice(0, 8) + '...' + key.slice(-4);
+}
+
+// ── Setup ─────────────────────────────────────────────────────────────
+function completeSetup() {
+  const nameInput = document.getElementById('setup-name');
+  myName = (nameInput.value || '').trim();
+  myPubkey = generateKeypair();
+  localStorage.setItem('rr_pubkey', myPubkey);
+  localStorage.setItem('rr_name', myName);
+  document.getElementById('setup').classList.remove('visible');
+  updateSettings();
+  render();
+}
+
+function checkSetup() {
+  const stored = localStorage.getItem('rr_pubkey');
+  if (stored) {
+    myPubkey = stored;
+    myName = localStorage.getItem('rr_name') || '';
+    restore();
+  } else {
+    document.getElementById('setup').classList.add('visible');
+  }
+}
+
+// ── Navigation ────────────────────────────────────────────────────────
+let currentScreen = 'trips';
+
+function showScreen(name) {
+  currentScreen = name;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
+  document.getElementById('screen-' + name).classList.add('visible');
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav-' + name).classList.add('active');
+
+  const fab = document.getElementById('fab');
+  fab.style.display = (name === 'trips' || name === 'needs') ? 'flex' : 'none';
+  render();
+}
+
+// ── Overlays ──────────────────────────────────────────────────────────
+function openForm() {
+  if (currentScreen === 'trips') openOverlay('overlay-trip');
+  else if (currentScreen === 'needs') openOverlay('overlay-need');
+}
+
+function openOverlay(id) {
+  document.getElementById(id).classList.add('visible');
+}
+
+function closeOverlay(id) {
+  document.getElementById(id).classList.remove('visible');
+}
+
+function closeOverlayOutside(event, id) {
+  if (event.target.classList.contains('overlay')) closeOverlay(id);
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── Form submissions ──────────────────────────────────────────────────
+function submitTrip() {
+  const dest = document.getElementById('trip-dest').value.trim();
+  if (!dest) { toast('Please enter a destination'); return; }
+  const departsStr = document.getElementById('trip-departs').value;
+  const departs_at = departsStr ? Math.floor(new Date(departsStr).getTime() / 1000) : Math.floor(Date.now() / 1000) + 3600;
+  const returnsStr = document.getElementById('trip-returns').value;
+  const returns_by = returnsStr ? Math.floor(new Date(returnsStr).getTime() / 1000) : undefined;
+  const seats = parseInt(document.getElementById('trip-seats').value) || 0;
+  const time_budget = parseInt(document.getElementById('trip-time').value) || 0;
+  const cargo = document.getElementById('trip-cargo').value.trim() || 'none';
+  const max_range = document.getElementById('trip-range').value.trim() || '—';
+  const physical = document.getElementById('trip-physical').checked;
+  const route = document.getElementById('trip-route').value.trim() || undefined;
+
+  const params = {
+    destination: dest,
+    departs_at: departs_at,
+    capacity: { seats, cargo, time_budget, physical_assistance: physical },
+    max_range: max_range,
+  };
+  if (returns_by) params.returns_by = returns_by;
+  if (route) params.route = route;
+  if (myName) params.display_name = myName;
+
+  announceTrip(params);
+  closeOverlay('overlay-trip');
+  // Reset form
+  document.getElementById('trip-dest').value = '';
+  document.getElementById('trip-route').value = '';
+  document.getElementById('trip-departs').value = '';
+  document.getElementById('trip-returns').value = '';
+  document.getElementById('trip-seats').value = '1';
+  document.getElementById('trip-time').value = '30';
+  document.getElementById('trip-cargo').value = '';
+  document.getElementById('trip-range').value = '';
+  document.getElementById('trip-physical').checked = false;
+}
+
+function submitNeed() {
+  const what = document.getElementById('need-what').value.trim();
+  if (!what) { toast('Please describe what you need'); return; }
+  const location = document.getElementById('need-location').value.trim() || '—';
+  const byStr = document.getElementById('need-by').value;
+  const by_when = byStr ? Math.floor(new Date(byStr).getTime() / 1000) : Math.floor(Date.now() / 1000) + 7200;
+  const cargo = document.getElementById('need-cargo').value.trim() || 'small item';
+  const time_on_location = parseInt(document.getElementById('need-time').value) || 10;
+  const seat = document.getElementById('need-seat').checked;
+  const physical = document.getElementById('need-physical').checked;
+
+  const params = {
+    what: what,
+    by_when: by_when,
+    location: location,
+    resource_footprint: { seat, cargo, time_on_location, physical_assistance: physical },
+  };
+  if (myName) params.display_name = myName;
+
+  doSubmitNeed(params);
+  closeOverlay('overlay-need');
+  // Reset form
+  document.getElementById('need-what').value = '';
+  document.getElementById('need-location').value = '';
+  document.getElementById('need-by').value = '';
+  document.getElementById('need-cargo').value = '';
+  document.getElementById('need-time').value = '10';
+  document.getElementById('need-seat').checked = false;
+  document.getElementById('need-physical').checked = false;
+}
+
+// ── Guardian / recovery actions ───────────────────────────────────────
+function doSetupGuardians() {
+  const input = document.getElementById('guardian-input').value.trim();
+  if (!input) { toast('Enter guardian public keys'); return; }
+  const keys = input.split(',').map(s => s.trim()).filter(Boolean);
+  if (keys.length === 0) { toast('No valid keys provided'); return; }
+  buildEvent(EventKind.GUARDIAN_SET, {
+    guardians: keys,
+    threshold: Math.min(2, keys.length),
+    encrypted_shards: {},
+  });
+  toast('Guardians set (' + keys.length + ')');
+}
+
+function doInitiateRecovery() {
+  buildEvent(EventKind.RECOVERY_INIT, {
+    recovering_pubkey: myPubkey,
+    new_device_pubkey: myPubkey,
+    timestamp: Math.floor(Date.now() / 1000),
+  });
+  toast('Recovery initiated');
+}
+
+// ── Rendering ─────────────────────────────────────────────────────────
+function badgeFor(status) {
+  return '<span class="badge badge-' + status + '">' + status + '</span>';
+}
+
+function renderTrips() {
+  const el = document.getElementById('trips-list');
+  const active = trips.filter(t => t.status === 'open');
+  if (active.length === 0) {
+    el.innerHTML = '<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg><br>No active trips right now.<br>Tap + to announce one.</div>';
+    return;
+  }
+  el.innerHTML = active.map(t => {
+    const c = parseContent(t.trip);
+    if (!c) return '';
+    const name = c.display_name || shortKey(t.trip.pubkey);
+    return '<div class="card" onclick="showTripDetail(\'' + t.trip.id + '\')">'
+      + '<div class="card-title">' + esc(c.destination) + '</div>'
+      + '<div class="card-sub">' + esc(name) + ' &middot; Departs ' + fmtTime(c.departs_at) + '</div>'
+      + '<div class="card-meta">'
+      + badgeFor('open')
+      + '<span style="font-size:.75rem;color:var(--muted)">' + t.remaining.seats + ' seats &middot; ' + esc(t.remaining.cargo) + ' &middot; ' + t.remaining.time_budget + ' min</span>'
+      + '</div></div>';
+  }).join('');
+}
+
+function renderNeeds() {
+  const el = document.getElementById('needs-list');
+  const unmatched = needs.filter(n => n.status === 'unmatched');
+  if (unmatched.length === 0) {
+    el.innerHTML = '<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><br>No unmatched needs.<br>Tap + to submit one.</div>';
+    return;
+  }
+  el.innerHTML = unmatched.map(n => {
+    const c = parseContent(n.need);
+    if (!c) return '';
+    const name = c.display_name || shortKey(n.need.pubkey);
+    return '<div class="card" onclick="showNeedDetail(\'' + n.need.id + '\')">'
+      + '<div class="card-title">' + esc(c.what) + '</div>'
+      + '<div class="card-sub">' + esc(name) + ' &middot; ' + esc(c.location) + '</div>'
+      + '<div class="card-meta">'
+      + badgeFor('unmatched')
+      + '<span style="font-size:.75rem;color:var(--muted)">By ' + fmtTime(c.by_when) + '</span>'
+      + '</div></div>';
+  }).join('');
+}
+
+function renderActivity() {
+  // My trips
+  const myTrips = trips.filter(t => t.trip.pubkey === myPubkey);
+  const mtEl = document.getElementById('my-trips-list');
+  if (myTrips.length === 0) {
+    mtEl.innerHTML = '<div class="card-sub" style="padding:8px 0">No trips yet</div>';
+  } else {
+    mtEl.innerHTML = myTrips.map(t => {
+      const c = parseContent(t.trip);
+      if (!c) return '';
+      return '<div class="card" onclick="showTripDetail(\'' + t.trip.id + '\')">'
+        + '<div class="card-title">' + esc(c.destination) + '</div>'
+        + '<div class="card-meta">' + badgeFor(t.status)
+        + '<span style="font-size:.75rem;color:var(--muted)">' + t.attachedNeeds.length + ' need(s) attached</span>'
+        + '</div></div>';
+    }).join('');
+  }
+
+  // My needs
+  const myNeeds = needs.filter(n => n.need.pubkey === myPubkey);
+  const mnEl = document.getElementById('my-needs-list');
+  if (myNeeds.length === 0) {
+    mnEl.innerHTML = '<div class="card-sub" style="padding:8px 0">No needs yet</div>';
+  } else {
+    mnEl.innerHTML = myNeeds.map(n => {
+      const c = parseContent(n.need);
+      if (!c) return '';
+      return '<div class="card" onclick="showNeedDetail(\'' + n.need.id + '\')">'
+        + '<div class="card-title">' + esc(c.what) + '</div>'
+        + '<div class="card-meta">' + badgeFor(n.status) + '</div></div>';
+    }).join('');
+  }
+
+  // My matches
+  const myMatches = matches.filter(m => m.runnerPubkey === myPubkey || m.requesterPubkey === myPubkey);
+  const mmEl = document.getElementById('my-matches-list');
+  if (myMatches.length === 0) {
+    mmEl.innerHTML = '<div class="card-sub" style="padding:8px 0">No matches yet</div>';
+  } else {
+    mmEl.innerHTML = myMatches.map(m => {
+      const ns = findNeed(m.needId);
+      const nc = ns ? parseContent(ns.need) : null;
+      const isRunner = m.runnerPubkey === myPubkey;
+      return '<div class="card">'
+        + '<div class="card-title">' + esc(nc ? nc.what : 'Need') + '</div>'
+        + '<div class="card-sub">' + (isRunner ? 'You are runner' : 'You are requester') + '</div>'
+        + '<div class="card-meta">' + badgeFor(m.status) + '</div>'
+        + renderMatchActions(m, isRunner)
+        + '</div>';
+    }).join('');
+  }
+}
+
+function renderMatchActions(match, isRunner) {
+  let html = '<div class="actions-bar">';
+  if (isRunner && match.status === 'accepted') {
+    html += '<button class="btn btn-primary btn-small" onclick="event.stopPropagation();fulfillNeed(\'' + match.matchId + '\')">Mark fulfilled</button>';
+  }
+  if (!isRunner && match.status === 'fulfilled') {
+    html += '<button class="btn btn-primary btn-small" onclick="event.stopPropagation();confirmFulfillment(\'' + match.matchId + '\')">Confirm received</button>';
+  }
+  if (!isRunner && match.status === 'accepted') {
+    html += '<button class="btn btn-danger btn-small" onclick="event.stopPropagation();releaseSlot(\'' + match.matchId + '\')">Release slot</button>';
+  }
+  html += '</div>';
+  return html;
+}
+
+// ── Detail views ──────────────────────────────────────────────────────
+function showTripDetail(tripId) {
+  const ts = findTrip(tripId);
+  if (!ts) return;
+  const c = parseContent(ts.trip);
+  if (!c) return;
+  const isRunner = ts.trip.pubkey === myPubkey;
+  const name = c.display_name || shortKey(ts.trip.pubkey);
+
+  let html = '<div class="overlay-header"><h2>Trip details</h2>'
+    + '<button class="overlay-close" onclick="closeOverlay(\'overlay-trip-detail\')">&times;</button></div>';
+
+  html += '<div class="detail-row"><span class="detail-label">Destination</span><span class="detail-value">' + esc(c.destination) + '</span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Runner</span><span class="detail-value">' + esc(name) + '</span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">' + badgeFor(ts.status) + '</span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Departs</span><span class="detail-value">' + fmtTime(c.departs_at) + '</span></div>';
+  if (c.returns_by) html += '<div class="detail-row"><span class="detail-label">Returns by</span><span class="detail-value">' + fmtTime(c.returns_by) + '</span></div>';
+  if (c.route) html += '<div class="detail-row"><span class="detail-label">Route</span><span class="detail-value">' + esc(c.route) + '</span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Max detour</span><span class="detail-value">' + esc(c.max_range) + '</span></div>';
+
+  html += '<h3 style="margin-top:16px">Remaining capacity</h3>';
+  html += '<div class="detail-row"><span class="detail-label">Seats</span><span class="detail-value">' + ts.remaining.seats + '</span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Cargo</span><span class="detail-value">' + esc(ts.remaining.cargo) + '</span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Time budget</span><span class="detail-value">' + ts.remaining.time_budget + ' min</span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Physical help</span><span class="detail-value">' + (ts.remaining.physical_assistance ? 'Yes' : 'No') + '</span></div>';
+
+  // Attached needs
+  if (ts.attachedNeeds.length > 0) {
+    html += '<h3 style="margin-top:16px">Attached needs (' + ts.attachedNeeds.length + ')</h3>';
+    ts.attachedNeeds.forEach(n => {
+      const nc = parseContent(n.need);
+      if (!nc) return;
+      html += '<div class="card" style="margin-top:8px">'
+        + '<div class="card-title">' + esc(nc.what) + '</div>'
+        + '<div class="card-meta">' + badgeFor(n.status) + '</div>';
+      const m = matches.find(mm => mm.needId === n.need.id);
+      if (m && isRunner) html += renderMatchActions(m, true);
+      html += '</div>';
+    });
+  }
+
+  // Runner actions
+  if (isRunner && ts.status === 'open') {
+    // Show unmatched needs that the runner can accept
+    const unmatched = needs.filter(n => n.status === 'unmatched');
+    if (unmatched.length > 0) {
+      html += '<h3 style="margin-top:16px">Accept a need</h3>';
+      unmatched.forEach(n => {
+        const nc = parseContent(n.need);
+        if (!nc) return;
+        html += '<div class="card" style="margin-top:8px">'
+          + '<div class="card-title">' + esc(nc.what) + '</div>'
+          + '<div class="card-sub">' + esc(nc.location) + ' &middot; By ' + fmtTime(nc.by_when) + '</div>'
+          + '<div class="actions-bar">'
+          + '<button class="btn btn-primary btn-small" onclick="event.stopPropagation();acceptNeed(\'' + ts.trip.id + '\',\'' + n.need.id + '\');showTripDetail(\'' + ts.trip.id + '\')">Accept</button>'
+          + '</div></div>';
+      });
+    }
+
+    html += '<div class="actions-bar" style="margin-top:20px">';
+    html += '<button class="btn btn-secondary btn-small" onclick="closeTrip(\'' + ts.trip.id + '\');closeOverlay(\'overlay-trip-detail\')">Close trip</button>';
+    html += '<button class="btn btn-danger btn-small" onclick="cancelTrip(\'' + ts.trip.id + '\');closeOverlay(\'overlay-trip-detail\')">Cancel trip</button>';
+    html += '</div>';
+  }
+
+  document.getElementById('trip-detail-content').innerHTML = html;
+  openOverlay('overlay-trip-detail');
+}
+
+function showNeedDetail(needId) {
+  const ns = findNeed(needId);
+  if (!ns) return;
+  const c = parseContent(ns.need);
+  if (!c) return;
+  const isRequester = ns.need.pubkey === myPubkey;
+  const name = c.display_name || shortKey(ns.need.pubkey);
+
+  let html = '<div class="overlay-header"><h2>Need details</h2>'
+    + '<button class="overlay-close" onclick="closeOverlay(\'overlay-need-detail\')">&times;</button></div>';
+
+  html += '<div class="detail-row"><span class="detail-label">What</span><span class="detail-value">' + esc(c.what) + '</span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Requester</span><span class="detail-value">' + esc(name) + '</span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">' + badgeFor(ns.status) + '</span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Location</span><span class="detail-value">' + esc(c.location) + '</span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Needed by</span><span class="detail-value">' + fmtTime(c.by_when) + '</span></div>';
+
+  if (c.resource_footprint) {
+    const fp = c.resource_footprint;
+    html += '<h3 style="margin-top:16px">Resource footprint</h3>';
+    html += '<div class="detail-row"><span class="detail-label">Needs seat</span><span class="detail-value">' + (fp.seat ? 'Yes' : 'No') + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">Cargo</span><span class="detail-value">' + esc(fp.cargo) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">Time on location</span><span class="detail-value">' + fp.time_on_location + ' min</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">Physical help</span><span class="detail-value">' + (fp.physical_assistance ? 'Yes' : 'No') + '</span></div>';
+  }
+
+  // Match info
+  if (ns.matchId) {
+    const m = findMatch(ns.matchId);
+    if (m) {
+      html += '<h3 style="margin-top:16px">Match</h3>';
+      html += '<div class="detail-row"><span class="detail-label">Match status</span><span class="detail-value">' + badgeFor(m.status) + '</span></div>';
+      const runner = findTrip(m.tripId);
+      if (runner) {
+        const tc = parseContent(runner.trip);
+        html += '<div class="detail-row"><span class="detail-label">Trip</span><span class="detail-value">' + esc(tc ? tc.destination : '—') + '</span></div>';
+      }
+      html += renderMatchActions(m, m.runnerPubkey === myPubkey);
+    }
+  }
+
+  // If unmatched, show which active trips could accept it
+  if (ns.status === 'unmatched') {
+    const active = trips.filter(t => t.status === 'open');
+    if (active.length > 0 && !isRequester) {
+      html += '<h3 style="margin-top:16px">Available trips</h3>';
+      active.forEach(t => {
+        const tc = parseContent(t.trip);
+        if (!tc || t.trip.pubkey !== myPubkey) return;
+        html += '<div class="card" style="margin-top:8px">'
+          + '<div class="card-title">' + esc(tc.destination) + '</div>'
+          + '<div class="actions-bar">'
+          + '<button class="btn btn-primary btn-small" onclick="event.stopPropagation();acceptNeed(\'' + t.trip.id + '\',\'' + ns.need.id + '\');closeOverlay(\'overlay-need-detail\')">Accept onto trip</button>'
+          + '</div></div>';
+      });
+    }
+  }
+
+  document.getElementById('need-detail-content').innerHTML = html;
+  openOverlay('overlay-need-detail');
+}
+
+// ── HTML escaping ─────────────────────────────────────────────────────
+function esc(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// ── Update settings panel ─────────────────────────────────────────────
+function updateSettings() {
+  document.getElementById('settings-pubkey').textContent = myPubkey ? shortKey(myPubkey) : '—';
+  document.getElementById('settings-name').textContent = myName || '(anonymous)';
+
+  let thtml = '';
+  for (const [key, t] of Object.entries(transports)) {
+    thtml += '<div class="detail-row"><span class="detail-label">' + esc(t.name) + '</span>'
+      + '<span class="detail-value">' + (t.available ? '<span style="color:var(--green)">Connected</span>' : '<span style="color:var(--muted)">Unavailable</span>') + '</span></div>';
+  }
+  document.getElementById('transport-details').innerHTML = thtml;
+}
+
+// ── Transport detection ───────────────────────────────────────────────
+function detectTransports() {
+  // Bluetooth — available if Web Bluetooth API exists
+  transports.bt.available = !!(navigator.bluetooth);
+  // WiFi — heuristic: online
+  transports.wifi.available = navigator.onLine;
+  // LoRa — would need hardware bridge; always false in browser
+  transports.lora.available = false;
+  // Internet — navigator.onLine
+  transports.net.available = navigator.onLine;
+
+  // Update dots
+  document.getElementById('dot-bt').classList.toggle('active', transports.bt.available);
+  document.getElementById('dot-wifi').classList.toggle('active', transports.wifi.available);
+  document.getElementById('dot-lora').classList.toggle('active', transports.lora.available);
+  document.getElementById('dot-net').classList.toggle('active', transports.net.available);
+
+  updateSettings();
+}
+
+// ── Master render ─────────────────────────────────────────────────────
+function render() {
+  renderTrips();
+  renderNeeds();
+  renderActivity();
+  updateSettings();
+}
+
+// ── Service Worker (inline via Blob) ──────────────────────────────────
+function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  const swCode = `
+    const CACHE = 'rural-run-v1';
+    self.addEventListener('install', e => {
+      e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', './index.html'])));
+      self.skipWaiting();
+    });
+    self.addEventListener('activate', e => {
+      e.waitUntil(caches.keys().then(keys =>
+        Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      ));
+      self.clients.claim();
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+    });
+  `;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  const url = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(url).catch(() => {});
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+checkSetup();
+showScreen('trips');
+detectTransports();
+registerSW();
+
+// Re-detect transports periodically
+setInterval(detectTransports, 10000);
+
+// Listen for online/offline changes
+window.addEventListener('online', detectTransports);
+window.addEventListener('offline', detectTransports);
+</script>
+</body>
+</html>
