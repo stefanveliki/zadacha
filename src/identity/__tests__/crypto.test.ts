@@ -2,7 +2,7 @@
  * Tests for crypto.ts — key generation, event id derivation, signing, verification.
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import {
   generateKeypair,
   derivePublicKey,

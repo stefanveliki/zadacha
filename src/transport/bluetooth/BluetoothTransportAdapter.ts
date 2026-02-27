@@ -1,4 +1,4 @@
-import { EventEnvelope, TransportAdapter } from '../../shared/types';
+import { EventEnvelope, TransportAdapter } from '../../shared/types.js';
 
 // ─── BLE constants ────────────────────────────────────────────────────────────
 

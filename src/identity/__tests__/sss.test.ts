@@ -2,7 +2,7 @@
  * Tests for sss.ts — Shamir's Secret Sharing over GF(2^8).
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import { splitSecret, combineShards } from '../sss.js';
 import { generateKeypair, bytesToHex } from '../crypto.js';
 import type { ShamirShard } from '../types.js';
