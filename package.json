@@ -2,14 +2,19 @@
   "name": "rural-run-protocol",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "test": "jest --runInBand"
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:jest": "jest --runInBand"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "ts-jest": "^29.2.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^2.0.0"
   }
 }
