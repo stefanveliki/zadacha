@@ -16,5 +16,9 @@
     "ts-jest": "^29.2.2",
     "typescript": "^5.4.5",
     "vitest": "^2.0.0"
+  },
+  "dependencies": {
+    "@noble/curves": "^2.0.1",
+    "@noble/hashes": "^2.0.1"
   }
 }
